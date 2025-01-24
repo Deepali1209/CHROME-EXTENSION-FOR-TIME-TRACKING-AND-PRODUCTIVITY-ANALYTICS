@@ -1,1 +1,2 @@
 # CHROME-EXTENSION-FOR-TIME-TRACKING-AND-PRODUCTIVITY-ANALYTICS
+![Image](https://github.com/user-attachments/assets/608415ba-6de1-4996-92e9-3c31cd751621)
