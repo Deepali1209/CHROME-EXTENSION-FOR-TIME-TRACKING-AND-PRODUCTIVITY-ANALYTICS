@@ -1,38 +1,33 @@
 let activeTabId = null;
-let activeStartTime = null;
+let activeWebsite = null;
+let timeSpent = {};
+let startTime = null;
 
-chrome.tabs.onActivated.addListener(({ tabId }) => {
-  trackTime();
-  activeTabId = tabId;
-  activeStartTime = Date.now();
+// When the active tab changes
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  await trackTime();
+  const tab = await chrome.tabs.get(activeInfo.tabId);
+  activeTabId = activeInfo.tabId;
+  activeWebsite = new URL(tab.url).hostname;
+  startTime = Date.now();
 });
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (tabId === activeTabId && changeInfo.url) {
-    trackTime();
-    activeStartTime = Date.now();
+// When the tab is updated (e.g., URL change)
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (tabId === activeTabId && changeInfo.status === "complete") {
+    await trackTime();
+    activeWebsite = new URL(tab.url).hostname;
+    startTime = Date.now();
   }
 });
 
-chrome.tabs.onRemoved.addListener(() => trackTime());
-
-function trackTime() {
-  if (activeTabId && activeStartTime) {
-    const timeSpent = Date.now() - activeStartTime;
-
-    chrome.tabs.get(activeTabId, (tab) => {
-      if (tab && tab.url) {
-        const domain = new URL(tab.url).hostname;
-        sendToBackend({ domain, timeSpent });
-      }
-    });
+// Track the time spent when switching tabs or closing
+async function trackTime() {
+  if (activeWebsite && startTime) {
+    const duration = Math.round((Date.now() - startTime) / 1000); // in seconds
+    timeSpent[activeWebsite] = (timeSpent[activeWebsite] || 0) + duration;
+    startTime = null;
+    console.log(timeSpent); // Log data (can save to storage or display)
+    await chrome.storage.local.set({ timeSpent });
   }
-}
-
-function sendToBackend(data) {
-  fetch("http://localhost:3000/track", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  }).catch(console.error);
 }
