@@ -1,11 +1,15 @@
-document.getElementById("view-dashboard").addEventListener("click", () => {
-    chrome.tabs.create({ url: "http://localhost:3000/data" });
-  });
+document.addEventListener("DOMContentLoaded", async () => {
+  const tableBody = document.getElementById("time-data");
+  const { timeSpent } = await chrome.storage.local.get("timeSpent") || {};
   
-  fetch("http://localhost:3000/data")
-    .then((res) => res.json())
-    .then((data) => {
-      const container = document.getElementById("data");
-      container.innerHTML = JSON.stringify(data, null, 2);
+  if (timeSpent) {
+    Object.keys(timeSpent).forEach((website) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${website}</td>
+        <td>${timeSpent[website]}</td>
+      `;
+      tableBody.appendChild(row);
     });
-  
+  }
+});
